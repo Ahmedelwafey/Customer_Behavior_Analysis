@@ -1,0 +1,55 @@
+#import libarieres 
+import pandas as pd
+import plotly.express as px
+import plotly.io as pio
+import plotly.graph_objects as go
+pio.templates.default = "plotly_dark"
+
+#read the dataset from its path
+data = pd.read_csv('the path of the dataset)
+nummiric_stats = data.describe()
+categoral_stats = data.describe(include="object")
+gender_counts = data['Gender'].value_counts().reset_index()
+gender_counts.columns = ['Gender' , 'Count']
+gender_grouped = data.groupby('Gender')['Total_Pages_Viewed'].mean().reset_index()
+gender_grouped.columns = ['Gender' , 'Total_Pages_Viewed']
+device_grouped =data.groupby('Device_Type')['Total_Pages_Viewed'].mean().reset_index()
+device_grouped.columns = ['Device_Type' , 'Total_Pages_Viewed']
+
+fig1 = px.histogram(data , x='Age' , title='Age Distribution')
+fig1.show()
+fig2 = px.bar(gender_counts , x='Gender' , y = 'Count' , title='Gender Distribution')
+fig2.show()
+fig3 = px.scatter(data, x='Product_Browsing_Time', y='Total_Pages_Viewed',
+                 title='Product Browsing Time vs. Total Pages Viewed', 
+                 trendline='ols')
+fig3.show()
+fig4 = px.bar(gender_grouped , x='Gender' , y = 'Total_Pages_Viewed' , title='Gender Distribution')
+fig4.show()
+fig5 = px.bar(device_grouped , x = 'Device_Type' , y = 'Total_Pages_Viewed', title="Device Distribtuition")
+fig5.show()
+
+data['CLV'] = (data['Total_Purchases'] * data['Total_Pages_Viewed']) / data['Age']
+
+data['Segment'] = pd.cut(data['CLV'], bins=[1, 2.5, 5, float('inf')], labels=['Low Value', 'Medium Value', 'High Value'])
+
+segment_counts = data['Segment'].value_counts().reset_index()
+segment_counts.columns = ['Segment', 'Count']
+
+
+fig6 = px.bar(segment_counts, x='Segment', y='Count', 
+             title='Customer Segmentation by CLV')
+fig6.update_xaxes(title='Segment')
+fig6.update_yaxes(title='Number of Customers')
+fig6.show()
+
+funnel_data = data[['Product_Browsing_Time', 'Items_Added_to_Cart', 'Total_Purchases']]
+funnel_data = funnel_data.groupby(['Product_Browsing_Time', 'Items_Added_to_Cart']).sum().reset_index()
+
+fig7 = px.funnel(funnel_data, x='Product_Browsing_Time', y='Items_Added_to_Cart', title='Conversion Funnel')
+fig7.show()
+
+data['Churned'] = data['Total_Purchases'] == 0
+
+churn_rate = data['Churned'].mean()
+print('\n', churn_rate)
